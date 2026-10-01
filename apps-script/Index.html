@@ -113,6 +113,21 @@ header {
   min-height: calc(100vh - 52px);
 }
 
+.kayit-durumu { font-size: 12px; color: var(--text3); white-space: nowrap; }
+.kayit-durumu.tamam { color: var(--green); }
+.kayit-durumu.hata { color: var(--red); cursor: pointer; text-decoration: underline; }
+.kullanici {
+  font-size: 12px;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 14px;
+  border-left: 1px solid var(--border);
+}
+.kullanici a { color: var(--red); font-weight: 500; text-decoration: none; }
+.kullanici a:hover { text-decoration: underline; }
+
 /* LEFT PANEL */
 .left-panel {
   background: var(--surface);
@@ -733,6 +748,13 @@ header {
 @media (max-width: 768px) {
   .layout { grid-template-columns: 1fr; }
   .left-panel { height: auto; position: static; max-height: 50vh; }
+  header { height: auto; min-height: 52px; padding: 8px 16px; flex-wrap: wrap; gap: 8px; position: static; }
+  .header-right { flex-wrap: wrap; gap: 8px; }
+  .header-btn { padding: 6px 10px; }
+  .kullanici { border-left: none; padding-left: 0; width: 100%; }
+  #kullaniciEmail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .right-panel { padding: 16px; }
+  .output-header { flex-wrap: wrap; gap: 8px; }
 }
 </style>
 </head>
@@ -744,10 +766,14 @@ header {
     Veli Mail Aracı
   </div>
   <div class="header-right">
+    <span class="kayit-durumu" id="kayitDurumu"></span>
     <span class="header-meta" id="ogrenciSayaci">0 öğrenci</span>
     <button class="header-btn ghost" id="silBtn" onclick="toggleSilmeModu()">🗑 Öğrenci Sil</button>
     <button class="header-btn" onclick="acModal()">+ Öğrenci Ekle</button>
-    <span class="header-meta">2025–2026</span>
+    <span class="kullanici" id="kullaniciAlani" style="display:none">
+      <span id="kullaniciEmail"></span>
+      <a href="https://accounts.google.com/Logout" target="_top" title="Ortak bilgisayarlarda işiniz bitince çıkış yapın">Çıkış</a>
+    </span>
   </div>
 </header>
 
@@ -968,7 +994,7 @@ let SABLONLAR = [
   {
     emoji: '📋',
     baslik: 'Ödev eksiği',
-    konu: 'Fen Bilimleri Ödev Eksiği',
+    konu: 'Ödev Eksiği Hakkında',
     metin: `Sayın Veli,\n\nÖğrencimizin son ödevinde eksiği olduğunu görüyorum. Ödevlerin düzenli tamamlanması, konuların pekişmesi açısından büyük önem taşımaktadır. Bu konuda desteğinizi rica ederim.\n\nSaygılarımla,`
   },
   {
@@ -980,8 +1006,8 @@ let SABLONLAR = [
   {
     emoji: '🎒',
     baslik: 'Materyal eksiği',
-    konu: 'Fen Bilimleri Materyal Eksiği',
-    metin: `Sayın Veli,\n\nBir süredir öğrencimizin ders kitapçığını okula getirmediğini görüyorum. Kitapçık, derslerimizde aktif olarak kullandığımız temel materyallerden biri olduğundan, bu durum öğrenme sürecini olumsuz etkileyebilmektedir.\n\nKitapçığın kaybolması ya da ulaşılamaması durumunda, dijital kopyasına Google Classroom üzerinden erişilebilmektedir. Classroom'da SCIENCE_BOOKLETS başlığı altında bulunmaktadır.\n\nBu konuyu birlikte takip edeceğimize inanıyor, işbirliğiniz için şimdiden teşekkür ediyorum. Herhangi bir sorunuz olursa lütfen benimle iletişime geçmekten çekinmeyiniz.\n\nSaygılarımla,`
+    konu: 'Ders Materyali Eksiği',
+    metin: `Sayın Veli,\n\nBir süredir öğrencimizin ders materyallerini okula getirmediğini görüyorum. Bu materyaller derslerimizde aktif olarak kullandığımız temel kaynaklar olduğundan, bu durum öğrenme sürecini olumsuz etkileyebilmektedir.\n\nBu konuyu birlikte takip edeceğimize inanıyor, işbirliğiniz için şimdiden teşekkür ediyorum. Herhangi bir sorunuz olursa lütfen benimle iletişime geçmekten çekinmeyiniz.\n\nSaygılarımla,`
   }
 ];
 
@@ -1190,13 +1216,23 @@ function gmaildeAc() {
   const enc = encodeURIComponent;
   const webUrl = 'https://mail.google.com/mail/?view=cm&fs=1&bcc=' + enc(bcc) + '&su=' + enc(konu) + '&body=' + enc(metin);
   const appUrl = 'googlegmail:///co?bcc=' + enc(bcc) + '&subject=' + enc(konu) + '&body=' + enc(metin);
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if (isMobile) {
-    window.location.href = appUrl;
-    setTimeout(function() { window.location.href = webUrl; }, 1200);
-  } else {
-    window.open(webUrl, '_blank');
-  }
+  const mailtoUrl = 'mailto:?bcc=' + enc(bcc) + '&subject=' + enc(konu) + '&body=' + enc(metin);
+  const ua = navigator.userAgent;
+  // Telefonda Gmail uygulamasını aç. Sayfa Google'ın çerçevesi içinde çalıştığı için
+  // bağlantı "_top" ile açılır (yalnızca çerçeveyi değil, sekmenin tamamını yönlendirir).
+  if (/iPhone|iPad|iPod/i.test(ua)) ustteAc(appUrl);
+  else if (/Android/i.test(ua)) ustteAc(mailtoUrl);
+  else window.open(webUrl, '_blank');
+}
+
+function ustteAc(url) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_top';
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
 
 function kopyalaTumu() {
@@ -1629,47 +1665,142 @@ function sablonSil() {
   showToast('Şablon silindi');
 }
 
-/* ===================== KALICI SAKLAMA (localStorage) ===================== */
+/* ===================== KALICI SAKLAMA ===================== */
+// Google Apps Script içinde çalışıyorsa veriler öğretmenin Google hesabında tutulur
+// (her cihazdan aynı liste). Dosya doğrudan açılırsa tarayıcıda (localStorage) tutulur.
+const GOOGLE_MODU = typeof google !== 'undefined' && !!(google.script && google.script.run);
 const STORAGE_KEY = 'veliMailAraciOgrenciler';
 const SABLON_KEY = 'veliMailAraciSablonlar';
 
-function kaydet() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(OGRENCILER)); }
-  catch (e) { /* localStorage kullanılamıyorsa sessizce geç */ }
+function sunucu(fn, ...args) {
+  return new Promise((res, rej) =>
+    google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
 }
 
-function yukle() {
+const bekleyenKayit = {};   // anahtar -> JSON (henüz sunucuya gitmemiş)
+let kayitZamanlayici = null;
+let kayitSuruyor = false;
+let sonSunucuVerisi = {};    // anahtar -> en son sunucuyla eşleşen JSON
+let yuklemeBasarisiz = false; // liste hiç gelmediyse boş liste sunucudakinin üzerine yazılmasın
+
+function kayitDurumu(durum) {
+  const el = document.getElementById('kayitDurumu');
+  if (!el) return;
+  const metin = { bekliyor: 'Kaydediliyor…', tamam: '✓ Kaydedildi', hata: '⚠ Kaydedilemedi — tekrar dene' };
+  el.textContent = metin[durum] || '';
+  el.className = 'kayit-durumu ' + durum;
+  el.onclick = durum === 'hata' ? () => kayitGonder() : null;
+}
+
+function depoyaYaz(anahtar, veri) {
+  const json = JSON.stringify(veri);
+  if (!GOOGLE_MODU) {
+    try { localStorage.setItem(anahtar === 'ogrenciler' ? STORAGE_KEY : SABLON_KEY, json); }
+    catch (e) { /* localStorage kullanılamıyorsa sessizce geç */ }
+    return;
+  }
+  if (yuklemeBasarisiz) {
+    showToast('Listeniz yüklenemediği için değişiklik kaydedilmedi. Sayfayı yenileyin.');
+    return;
+  }
+  bekleyenKayit[anahtar] = json;
+  kayitDurumu('bekliyor');
+  clearTimeout(kayitZamanlayici);
+  kayitZamanlayici = setTimeout(kayitGonder, 700);
+}
+
+async function kayitGonder() {
+  if (kayitSuruyor) { kayitZamanlayici = setTimeout(kayitGonder, 500); return; }
+  const anahtarlar = Object.keys(bekleyenKayit);
+  if (!anahtarlar.length) return;
+  kayitSuruyor = true;
+  kayitDurumu('bekliyor');
   try {
-    const ham = localStorage.getItem(STORAGE_KEY);
-    if (ham) {
-      const veri = JSON.parse(ham);
-      if (Array.isArray(veri)) OGRENCILER = veri;
+    for (const a of anahtarlar) {
+      const json = bekleyenKayit[a];
+      await sunucu('veriKaydet', a, json);
+      sonSunucuVerisi[a] = json;
+      if (bekleyenKayit[a] === json) delete bekleyenKayit[a];
     }
+    kayitDurumu(Object.keys(bekleyenKayit).length ? 'bekliyor' : 'tamam');
+  } catch (e) {
+    kayitDurumu('hata');
+    showToast('Kaydedilemedi: ' + (e && e.message ? e.message : 'bağlantı hatası'));
+  } finally {
+    kayitSuruyor = false;
+  }
+}
+
+window.addEventListener('beforeunload', e => {
+  if (Object.keys(bekleyenKayit).length) { e.preventDefault(); e.returnValue = ''; }
+});
+
+function kaydet() { depoyaYaz('ogrenciler', OGRENCILER); }
+function sablonKaydetLocal() { depoyaYaz('sablonlar', SABLONLAR); }
+
+function veriyiUygula(ogrJson, sabJson) {
+  try {
+    const o = ogrJson ? JSON.parse(ogrJson) : null;
+    if (Array.isArray(o)) OGRENCILER = o;
+  } catch (e) { /* bozuk veri varsa yok say */ }
+  try {
+    const s = sabJson ? JSON.parse(sabJson) : null;
+    if (Array.isArray(s) && s.length) SABLONLAR = s;
   } catch (e) { /* bozuk veri varsa yok say */ }
 }
 
-function sablonKaydetLocal() {
-  try { localStorage.setItem(SABLON_KEY, JSON.stringify(SABLONLAR)); }
-  catch (e) { /* localStorage kullanılamıyorsa sessizce geç */ }
+async function yukle() {
+  if (!GOOGLE_MODU) {
+    let o = null, s = null;
+    try { o = localStorage.getItem(STORAGE_KEY); s = localStorage.getItem(SABLON_KEY); } catch (e) {}
+    veriyiUygula(o, s);
+    return;
+  }
+  const v = await sunucu('veriGetir');
+  sonSunucuVerisi = { ogrenciler: v.ogrenciler, sablonlar: v.sablonlar };
+  veriyiUygula(v.ogrenciler, v.sablonlar);
+  if (v.email) {
+    document.getElementById('kullaniciEmail').textContent = v.email;
+    document.getElementById('kullaniciAlani').style.display = '';
+  }
 }
 
-function sablonYukleLocal() {
-  try {
-    const ham = localStorage.getItem(SABLON_KEY);
-    if (ham) {
-      const veri = JSON.parse(ham);
-      if (Array.isArray(veri) && veri.length) SABLONLAR = veri;
-    }
-  } catch (e) { /* bozuk veri varsa yok say */ }
+function hepsiniCiz() {
+  if (aktifSinif !== 'hepsi' && !OGRENCILER.some(o => o.sinif === aktifSinif)) aktifSinif = 'hepsi';
+  if (typeof aktifSablon === 'number' && !SABLONLAR[aktifSablon]) aktifSablon = null;
+  initSinifTabs();
+  renderList();
+  initSablonlar();
+  guncelle();
 }
+
+// Başka bir cihazda değişiklik yapılmış olabilir: sekmeye geri dönülünce tazele
+document.addEventListener('visibilitychange', async () => {
+  if (!GOOGLE_MODU || document.hidden || kayitSuruyor || Object.keys(bekleyenKayit).length) return;
+  try {
+    const v = await sunucu('veriGetir');
+    if (Object.keys(bekleyenKayit).length) return;
+    if (yuklemeBasarisiz) { yuklemeBasarisiz = false; if (v.email) { document.getElementById('kullaniciEmail').textContent = v.email; document.getElementById('kullaniciAlani').style.display = ''; } }
+    else if (v.ogrenciler === sonSunucuVerisi.ogrenciler && v.sablonlar === sonSunucuVerisi.sablonlar) return;
+    sonSunucuVerisi = { ogrenciler: v.ogrenciler, sablonlar: v.sablonlar };
+    veriyiUygula(v.ogrenciler, v.sablonlar);
+    hepsiniCiz();
+  } catch (e) { /* bağlantı yoksa mevcut haliyle devam */ }
+});
 
 /* ===================== INIT ===================== */
-yukle();
-sablonYukleLocal();
-initSinifTabs();
-renderList();
-initSablonlar();
-updateBadge();
+(async function () {
+  if (GOOGLE_MODU) {
+    document.getElementById('ogrenciList').innerHTML = '<div class="ogrenci-empty">Listeniz yükleniyor…</div>';
+  }
+  try {
+    await yukle();
+  } catch (e) {
+    yuklemeBasarisiz = GOOGLE_MODU;
+    showToast('Liste yüklenemedi. Sayfayı yenileyin.');
+  }
+  hepsiniCiz();
+})();
 </script>
 </body>
 </html>
