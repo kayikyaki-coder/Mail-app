@@ -1320,9 +1320,16 @@ function gmaildeAc() {
     metin = document.getElementById('metinVal').innerText || document.getElementById('metinVal').textContent;
   }
   const enc = encodeURIComponent;
-  const webUrl = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + enc(to) + '&cc=' + enc(cc) + '&bcc=' + enc(bcc) + '&su=' + enc(konu) + '&body=' + enc(metin);
-  const appUrl = 'googlegmail:///co?to=' + enc(to) + '&cc=' + enc(cc) + '&bcc=' + enc(bcc) + '&subject=' + enc(konu) + '&body=' + enc(metin);
-  const mailtoUrl = 'mailto:' + to.split(', ').filter(Boolean).map(enc).join(',') + '?cc=' + enc(cc) + '&bcc=' + enc(bcc) + '&subject=' + enc(konu) + '&body=' + enc(metin);
+  // Not: Google Apps Script sayfayı sunarken JavaScript yorumlarını temizliyor ve metin içindeki
+  // iki eğik çizgiyi (ör. https: sonrası) yorum başlangıcı sanıp satırın kalanını siliyor.
+  // Bu yüzden adreslerde iki eğik çizgi yan yana yazılmıyor, '/'.repeat(...) ile oluşturuluyor.
+  const sorgu = o => Object.keys(o).filter(k => o[k]).map(k => k + '=' + enc(o[k])).join('&');
+  const webUrl = 'https:' + '/'.repeat(2) + 'mail.google.com/mail/?' +
+    sorgu({ view: 'cm', fs: '1', to, cc, bcc, su: konu, body: metin });
+  const appUrl = 'googlegmail:' + '/'.repeat(3) + 'co?' +
+    sorgu({ to, cc, bcc, subject: konu, body: metin });
+  const mailtoUrl = 'mailto:' + to.split(', ').filter(Boolean).map(enc).join(',') + '?' +
+    sorgu({ cc, bcc, subject: konu, body: metin });
   const ua = navigator.userAgent;
   // Telefonda Gmail uygulamasını aç. Sayfa Google'ın çerçevesi içinde çalıştığı için
   // bağlantı "_top" ile açılır (yalnızca çerçeveyi değil, sekmenin tamamını yönlendirir).
