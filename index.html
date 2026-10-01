@@ -861,9 +861,10 @@ header {
         </div>
 
         <div class="duzen-info">
-          <b>Excel düzeni:</b> sütunlar sırasıyla şu şekilde olmalı:
-          <span class="duzen-cols">Sınıf&nbsp;|&nbsp;No&nbsp;|&nbsp;Ad&nbsp;|&nbsp;Soyad&nbsp;|&nbsp;Baba Adı&nbsp;|&nbsp;Baba E-Mail&nbsp;|&nbsp;Anne Adı&nbsp;|&nbsp;Anne E-Mail</span>
-          İlk satır başlık olabilir (otomatik atlanır). Boş e-posta hücreleri sorun değildir.
+          <b>Okuldan gelen Excel dosyasını hiç değiştirmeden yükleyebilirsiniz.</b><br>
+          Sütunlar başlıklarına göre otomatik bulunur; sıraları önemli değildir. Okul, Doğum Tarihi, Cep Tel gibi fazladan sütunlar yok sayılır.
+          <span class="duzen-cols">Sınıf&nbsp;|&nbsp;No&nbsp;|&nbsp;Ad&nbsp;|&nbsp;Soyad&nbsp;|&nbsp;Baba E-Mail&nbsp;|&nbsp;Anne E-Mail</span>
+          Boş e-posta hücreleri sorun değildir. Dosyada Sınıf sütunu yoksa sınıf, dosya adından alınır (örn. "5-A ....xlsx").
         </div>
       </div>
 
@@ -1312,27 +1313,97 @@ dosyaInput.addEventListener('change', e => {
   e.target.value = '';
 });
 
-// Sütun sırası: Sınıf, No, Ad, Soyad, Baba Adı, Baba E-Mail, Anne Adı, Anne E-Mail
+// Başlık metnini karşılaştırılabilir hale getirir: "Baba E-Mail" -> "babaemail", "Sınıf" -> "sinif"
+function normBaslik(s) {
+  return (s === undefined || s === null ? '' : s.toString())
+    .toLocaleLowerCase('tr')
+    .replace(/ı/g,'i').replace(/ğ/g,'g').replace(/ü/g,'u')
+    .replace(/ş/g,'s').replace(/ö/g,'o').replace(/ç/g,'c')
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9]/g,'');
+}
+
+// "5/A", "5 a", "5A" -> "5-A" (sınıf sekmeleri ve tekrar kontrolü tutarlı olsun)
+function normSinif(s) {
+  const t = (s || '').toString().trim();
+  const m = t.match(/^(\d{1,2})\s*[-\/. ]?\s*([a-zçğıöşü])$/i);
+  return m ? m[1] + '-' + m[2].toLocaleUpperCase('tr') : t;
+}
+
+// Dosya adından sınıf tahmini: "5-A VELİ İLETİŞİM.xlsx" -> "5-A"
+function sinifDosyaAdindan(ad) {
+  const m = (ad || '').match(/(?:^|[^0-9])(\d{1,2})\s*[-_\/. ]?\s*([A-Za-zÇĞİÖŞÜçğıöşü])(?=[^A-Za-zÇĞİÖŞÜçğıöşü]|$)/);
+  return m ? normSinif(m[1] + '-' + m[2]) : '';
+}
+
+// Bir başlık hücresinin hangi alana karşılık geldiğini bulur
+function sutunTuru(h) {
+  if (!h) return null;
+  const veli = /baba|anne|veli/.test(h);
+  if (/mail|eposta/.test(h)) return 'mail';
+  if (veli) return null;                                   // Baba Adı, Anne Cep Tel vb. — kullanılmıyor
+  if (/sinif|sube/.test(h)) return 'sinif';
+  if (/^(ogrenci|okul)?(no|numara|numarasi)$/.test(h)) return 'no';
+  if (/soyad/.test(h) && /^(ogrenci)?(ad|adi)/.test(h)) return 'adsoyad'; // "Adı Soyadı" tek sütun
+  if (/soyad/.test(h)) return 'soyad';
+  if (/^(ogrenci)?(ad|adi|isim|ismi)$/.test(h) || h === 'ogrenciadi') return 'ad';
+  return null;
+}
+
+// Satırlar içinde başlık satırını arar (üstte okul adı/başlık satırı olabilir)
+function basliklariBul(rows) {
+  const ara = Math.min(rows.length, 15);
+  for (let i = 0; i < ara; i++) {
+    const map = { mails: [] };
+    (rows[i] || []).forEach((c, j) => {
+      const tur = sutunTuru(normBaslik(c));
+      if (!tur) return;
+      if (tur === 'mail') map.mails.push(j);
+      else if (map[tur] === undefined) map[tur] = j;
+    });
+    const adVar = map.ad !== undefined || map.adsoyad !== undefined;
+    if (adVar && (map.mails.length || map.soyad !== undefined || map.sinif !== undefined)) {
+      return { satir: i, map };
+    }
+  }
+  return null;
+}
+
+// Hücredeki e-posta adreslerini ayıklar (bir hücrede birden fazla olabilir)
+function mailleriAyikla(deger) {
+  return ((deger || '').toString().match(/[^\s,;<>"'()]+@[^\s,;<>"'()]+\.[^\s,;<>"'()]+/g) || []);
+}
+
+// Okuldan gelen Excel olduğu gibi yüklenebilir: sütunlar başlıklarına göre bulunur,
+// Okul / Doğum Tarihi / Cep Tel gibi fazladan sütunlar yok sayılır.
+// Başlık yoksa eski sabit düzen kullanılır: Sınıf, No, Ad, Soyad, Baba Adı, Baba E-Mail, Anne Adı, Anne E-Mail
 // Sadece parse eder, OGRENCILER'a dokunmaz. Duplike kontrolü dosyaOku içinde yapılır.
-function satirlariAyristir(rows) {
+function satirlariAyristir(rows, varsayilanSinif) {
   if (!rows.length) return { parsed: [], atlanan: 0 };
-  let start = 0;
-  const ilk = rows[0].map(c => (c || '').toString().toLowerCase().trim());
-  if (ilk.some(c => ['sınıf','sinif','ad','soyad','no'].includes(c))) start = 1;
+  const bulunan = basliklariBul(rows);
+  const map = bulunan ? bulunan.map : { sinif: 0, no: 1, ad: 2, soyad: 3, mails: [5, 7] };
+  const start = bulunan ? bulunan.satir + 1 : 0;
 
   const parsed = [];
   let atlanan = 0;
   for (let i = start; i < rows.length; i++) {
-    const r = rows[i].map(c => (c === undefined || c === null) ? '' : c.toString().trim());
+    const r = (rows[i] || []).map(c => (c === undefined || c === null) ? '' : c.toString().trim());
     if (r.every(c => c === '')) continue;
-    const sinif = r[0] || '';
-    const no    = r[1] || '';
-    const ad    = r[2] || '';
-    const soyad = r[3] || '';
-    const babaMail = r[5] || '';
-    const anneMail = r[7] || '';
+    const al = j => (j === undefined ? '' : (r[j] || ''));
+
+    let ad = al(map.ad), soyad = al(map.soyad);
+    if (!ad && map.adsoyad !== undefined) {
+      const parca = al(map.adsoyad).split(/\s+/).filter(Boolean);
+      soyad = parca.length > 1 ? parca.pop() : '';
+      ad = parca.join(' ');
+    }
+    const sinif = normSinif(al(map.sinif)) || varsayilanSinif || '';
+    const no = al(map.no);
     if (!sinif || !ad) { atlanan++; continue; }
-    const mails = [babaMail, anneMail].filter(m => m && m.includes('@'));
+    // Tablonun altındaki "Toplam", imza vb. satırları atla
+    if (!bulunan && !no && !map.mails.some(j => al(j).includes('@'))) { atlanan++; continue; }
+
+    const mails = [...new Set(map.mails.flatMap(j => mailleriAyikla(al(j))))];
     parsed.push({ no, sinif, ad, soyad, mails });
   }
   return { parsed, atlanan };
@@ -1353,21 +1424,31 @@ function dosyaOku(file) {
 
   reader.onload = function(ev) {
     try {
-      let rows = [];
+      const dosyaSinif = sinifDosyaAdindan(file.name.replace(/\.[^.]+$/, ''));
+      const parsed = [];
+      let atlanan = 0;
+      const ekle = (rows, varsayilan) => {
+        const s = satirlariAyristir(rows, varsayilan);
+        parsed.push(...s.parsed);
+        atlanan += s.atlanan;
+      };
       if (isExcel) {
         const data = new Uint8Array(ev.target.result);
         const wb = XLSX.read(data, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        // Her sayfa ayrı bir sınıf olabilir; sınıf sütunu yoksa sayfa adı, o da yoksa dosya adı kullanılır
+        wb.SheetNames.forEach(ad => {
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[ad], { header: 1, defval: '', raw: false });
+          ekle(rows, sinifDosyaAdindan(ad) || dosyaSinif);
+        });
       } else {
         const text = ev.target.result;
-        rows = text.split(/\r?\n/).filter(l => l.trim().length)
+        const rows = text.split(/\r?\n/).filter(l => l.trim().length)
                    .map(line => line.split(/[;,\t]/).map(c => c.trim().replace(/^"|"$/g,'')));
+        ekle(rows, dosyaSinif);
       }
-      const { parsed, atlanan } = satirlariAyristir(rows);
       if (parsed.length === 0) {
         sonuc.className = 'import-sonuc err';
-        sonuc.textContent = 'Geçerli öğrenci bulunamadı. Sütun sırasını kontrol edin.';
+        sonuc.textContent = 'Dosyada öğrenci bulunamadı. Dosyada "Ad" ve "E-Mail" başlıklı sütunlar olduğundan emin olun.';
         return;
       }
 
