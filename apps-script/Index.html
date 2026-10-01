@@ -817,6 +817,18 @@ header {
 </style>
 </head>
 <body>
+<script>
+// Ana kod hiç çalışmazsa (ör. dosya Apps Script'e eksik yapıştırıldıysa) boş ekran yerine uyarı göster.
+// Bu blok ayrı olduğu için ana koddaki bir hatadan etkilenmez.
+setTimeout(function () {
+  if (window.__uygulamaHazir) return;
+  var d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#C0392B;color:#fff;padding:14px 20px;font:14px/1.5 sans-serif';
+  d.innerHTML = '<b>Uygulama yüklenemedi.</b> Index dosyası Apps Script\'e eksik yapıştırılmış olabilir: ' +
+    'Index dosyasının en son satırı <code>&lt;/html&gt;</code> olmalı. Dosyayı silip tamamını yeniden yapıştırın, kaydedin ve yeni sürüm olarak yayınlayın.';
+  document.body.appendChild(d);
+}, 6000);
+</script>
 
 <header>
   <div class="logo">
@@ -1922,6 +1934,7 @@ document.addEventListener('visibilitychange', async () => {
 });
 
 /* ===================== INIT ===================== */
+window.__uygulamaHazir = true;
 (async function () {
   if (GOOGLE_MODU) {
     document.getElementById('ogrenciList').innerHTML = '<div class="ogrenci-empty">Listeniz yükleniyor…</div>';
@@ -1937,3 +1950,4 @@ document.addEventListener('visibilitychange', async () => {
 </script>
 </body>
 </html>
+<!-- DOSYANIN SONU: Apps Script'e yapıştırdığınızda bu satır en altta görünmeli -->
