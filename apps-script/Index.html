@@ -240,10 +240,68 @@ header {
   border: 1px solid transparent;
 }
 .ogrenci-item:hover { background: var(--surface2); }
-.ogrenci-item-sil { border-color: transparent; }
-.ogrenci-item-sil:hover { background: var(--red-bg); border-color: var(--red); }
-.ogrenci-item-sil .ogrenci-sil-icon { opacity: 0; transition: opacity 0.1s; font-size: 14px; }
-.ogrenci-item-sil:hover .ogrenci-sil-icon { opacity: 1; }
+.ogrenci-item-sil:hover { background: var(--red-bg); }
+.ogrenci-item.ogrenci-item-sil.selected { background: var(--red-bg); border-color: var(--red); }
+.ogrenci-item.ogrenci-item-sil.selected .ogrenci-checkbox { background: var(--red); border-color: var(--red); }
+.ogrenci-item.ogrenci-item-sil.selected .ogrenci-name { text-decoration: line-through; color: var(--red); }
+
+.sil-bar {
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  background: var(--red-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sil-ipucu { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.sil-onay {
+  padding: 9px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--red);
+  background: var(--red);
+  color: #fff;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sil-onay:hover { background: #A93226; }
+.sil-onay:disabled { background: var(--surface); color: var(--text3); border-color: var(--border); cursor: default; }
+
+/* ALICI ALANI SEÇİCİ (To / Cc / Bcc) */
+.alici-secici { display: flex; align-items: center; gap: 8px; }
+.alici-etiket { font-size: 12px; color: var(--text2); font-weight: 500; }
+.alici-grup {
+  display: inline-flex;
+  padding: 3px;
+  gap: 3px;
+  border: 1.5px solid var(--border2);
+  border-radius: 999px;
+  background: var(--surface);
+}
+.alici-btn {
+  min-width: 42px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text2);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.alici-btn:hover { background: var(--surface2); color: var(--text); }
+.alici-btn.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+.alici-uyari {
+  font-size: 12px;
+  color: #8A5A00;
+  background: #FFF6E0;
+  border: 1px solid #F0D58C;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
 .ogrenci-item.selected {
   background: var(--accent-bg);
   border-color: var(--accent-border);
@@ -795,6 +853,10 @@ header {
         <button class="select-all-btn" onclick="toggleSelectAll()">Tümünü seç</button>
       </div>
       <div class="ogrenci-list" id="ogrenciList"></div>
+      <div class="sil-bar" id="silBar" style="display:none">
+        <div class="sil-ipucu">Silinecek öğrencileri işaretleyin. Bir sınıfın tamamı için üstten sınıfı, herkes için <b>Hepsi</b>'yi seçip <b>Tümünü seç</b>'e basın.</div>
+        <button class="sil-onay" id="silOnayBtn" onclick="seciliOgrencileriSil()" disabled>Seçilenleri sil</button>
+      </div>
     </div>
 
   </div>
@@ -815,31 +877,46 @@ header {
     <div class="output-section" id="outputSection">
       <div class="placeholder-state" id="placeholderState">
         <div class="placeholder-icon">✉</div>
-        <div class="placeholder-title">Hazır olduğunda burada görünecek</div>
-        <div class="placeholder-sub">Sol taraftan öğrenci(ler) seçin, ardından şablon belirleyin.</div>
+        <div class="placeholder-title" id="placeholderTitle">Hazır olduğunda burada görünecek</div>
+        <div class="placeholder-sub" id="placeholderSub">Sol taraftan öğrenci(ler) seçin, ardından şablon belirleyin.</div>
       </div>
 
       <div id="outputContent" style="display:none">
         <div class="output-header">
           <div class="output-title">Hazırlanan mail</div>
           <div class="output-actions">
+            <div class="alici-secici" title="Veli e-postaları hangi alana yazılsın?">
+              <span class="alici-etiket">Veliler:</span>
+              <div class="alici-grup">
+                <button class="alici-btn" data-alan="to" onclick="aliciAlaniSec('to')">To</button>
+                <button class="alici-btn" data-alan="cc" onclick="aliciAlaniSec('cc')">Cc</button>
+                <button class="alici-btn active" data-alan="bcc" onclick="aliciAlaniSec('bcc')">Bcc</button>
+              </div>
+            </div>
             <button class="btn" onclick="kopyalaTumu()">Tümünü kopyala</button>
             <button class="btn primary" onclick="gmaildeAc()">Gmail'de aç ↗</button>
           </div>
         </div>
         <div class="output-body">
+          <div class="alici-uyari" id="aliciUyari" style="display:none"></div>
           <div class="mail-field">
-            <div class="field-label">To</div>
-            <div class="field-val empty">—</div>
-          </div>
-          <div class="mail-field">
-            <div class="field-label">Cc</div>
-            <div class="field-val empty">—</div>
+            <div class="field-header">
+              <div class="field-label" id="toLabel">To</div>
+              <button class="field-copy" id="toKopyala" onclick="kopyala('toVal')">Kopyala</button>
+            </div>
+            <div class="field-val mono" id="toVal"></div>
           </div>
           <div class="mail-field">
             <div class="field-header">
-              <div class="field-label">Bcc — Alıcılar</div>
-              <button class="field-copy" onclick="kopyala('bccVal')">Kopyala</button>
+              <div class="field-label" id="ccLabel">Cc</div>
+              <button class="field-copy" id="ccKopyala" onclick="kopyala('ccVal')">Kopyala</button>
+            </div>
+            <div class="field-val mono" id="ccVal"></div>
+          </div>
+          <div class="mail-field">
+            <div class="field-header">
+              <div class="field-label" id="bccLabel">Bcc</div>
+              <button class="field-copy" id="bccKopyala" onclick="kopyala('bccVal')">Kopyala</button>
             </div>
             <div class="field-val mono" id="bccVal"></div>
           </div>
@@ -1075,16 +1152,7 @@ function renderList() {
     const key = o.sinif + '_' + o.ad + '_' + o.soyad;
     const safeKey = key.replace(/'/g,"\\'");
     const sel = secilenler.has(key);
-    if (silmeModu) {
-      return `<div class="ogrenci-item ogrenci-item-sil" onclick="ogrenciSil('${safeKey}')">
-        <div class="ogrenci-info">
-          <div class="ogrenci-name">${o.ad} ${o.soyad}</div>
-          <div class="ogrenci-sinif">${o.sinif}</div>
-        </div>
-        <div class="ogrenci-sil-icon">🗑</div>
-      </div>`;
-    }
-    return `<div class="ogrenci-item${sel ? ' selected' : ''}" onclick="toggleOgrenci('${safeKey}')">
+    return `<div class="ogrenci-item${silmeModu ? ' ogrenci-item-sil' : ''}${sel ? ' selected' : ''}" onclick="toggleOgrenci('${safeKey}')">
       <div class="ogrenci-checkbox"></div>
       <div class="ogrenci-info">
         <div class="ogrenci-name">${o.ad} ${o.soyad}</div>
@@ -1116,6 +1184,7 @@ function toggleSelectAll() {
 function updateBadge() {
   document.getElementById('secilenBadge').textContent = secilenler.size + ' öğrenci seçili';
   document.getElementById('ogrenciSayaci').textContent = OGRENCILER.length + ' öğrenci';
+  silButonunuGuncelle();
 }
 
 function initSablonlar() {
@@ -1161,9 +1230,14 @@ function guncelle() {
   const placeholder = document.getElementById('placeholderState');
   const outputContent = document.getElementById('outputContent');
 
-  if (aktifSablon === null) {
+  if (aktifSablon === null || silmeModu) {
     placeholder.style.display = '';
     outputContent.style.display = 'none';
+    document.getElementById('placeholderTitle').textContent = silmeModu
+      ? 'Silme modundasınız' : 'Hazır olduğunda burada görünecek';
+    document.getElementById('placeholderSub').textContent = silmeModu
+      ? 'Soldan silinecek öğrencileri işaretleyip alttaki kırmızı düğmeye basın. İşiniz bitince "Silme Modundan Çık"a tıklayın.'
+      : 'Sol taraftan öğrenci(ler) seçin, ardından şablon belirleyin.';
     return;
   }
 
@@ -1173,7 +1247,7 @@ function guncelle() {
   const secOgrenciler = OGRENCILER.filter(o => secilenler.has(o.sinif + '_' + o.ad + '_' + o.soyad));
   const tumMails = [...new Set(secOgrenciler.flatMap(o => o.mails))];
 
-  document.getElementById('bccVal').textContent = tumMails.join(', ');
+  alicilariGoster(tumMails, secOgrenciler.length);
 
   const konuEl = document.getElementById('konuVal');
   const metinEl = document.getElementById('metinVal');
@@ -1207,22 +1281,57 @@ function kopyala(id) {
 }
 
 function gmaildeAc() {
-  const bcc = document.getElementById('bccVal').textContent;
+  const { to, cc, bcc } = alicilar();
   let konu = '', metin = '';
   if (aktifSablon !== 'serbest') {
     konu = document.getElementById('konuVal').innerText || document.getElementById('konuVal').textContent;
     metin = document.getElementById('metinVal').innerText || document.getElementById('metinVal').textContent;
   }
   const enc = encodeURIComponent;
-  const webUrl = 'https://mail.google.com/mail/?view=cm&fs=1&bcc=' + enc(bcc) + '&su=' + enc(konu) + '&body=' + enc(metin);
-  const appUrl = 'googlegmail:///co?bcc=' + enc(bcc) + '&subject=' + enc(konu) + '&body=' + enc(metin);
-  const mailtoUrl = 'mailto:?bcc=' + enc(bcc) + '&subject=' + enc(konu) + '&body=' + enc(metin);
+  const webUrl = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + enc(to) + '&cc=' + enc(cc) + '&bcc=' + enc(bcc) + '&su=' + enc(konu) + '&body=' + enc(metin);
+  const appUrl = 'googlegmail:///co?to=' + enc(to) + '&cc=' + enc(cc) + '&bcc=' + enc(bcc) + '&subject=' + enc(konu) + '&body=' + enc(metin);
+  const mailtoUrl = 'mailto:' + to.split(', ').filter(Boolean).map(enc).join(',') + '?cc=' + enc(cc) + '&bcc=' + enc(bcc) + '&subject=' + enc(konu) + '&body=' + enc(metin);
   const ua = navigator.userAgent;
   // Telefonda Gmail uygulamasını aç. Sayfa Google'ın çerçevesi içinde çalıştığı için
   // bağlantı "_top" ile açılır (yalnızca çerçeveyi değil, sekmenin tamamını yönlendirir).
   if (/iPhone|iPad|iPod/i.test(ua)) ustteAc(appUrl);
   else if (/Android/i.test(ua)) ustteAc(mailtoUrl);
   else window.open(webUrl, '_blank');
+}
+
+/* ===================== VELİ E-POSTALARININ ALANI (To / Cc / Bcc) ===================== */
+// Varsayılan Bcc: veliler birbirlerinin adreslerini görmez. Bilinçli bir seçim olsun diye
+// To/Cc seçimi kaydedilmez; sayfa her açıldığında yeniden Bcc'den başlar.
+let aliciAlani = 'bcc';
+let gosterilenMailler = [];
+
+function aliciAlaniSec(alan) {
+  aliciAlani = alan;
+  document.querySelectorAll('.alici-btn').forEach(b => b.classList.toggle('active', b.dataset.alan === alan));
+  guncelle();
+}
+
+function alicilar() {
+  const a = { to: '', cc: '', bcc: '' };
+  a[aliciAlani] = gosterilenMailler.join(', ');
+  return a;
+}
+
+function alicilariGoster(mailler, ogrenciSayisi) {
+  gosterilenMailler = mailler;
+  const a = alicilar();
+  ['to', 'cc', 'bcc'].forEach(alan => {
+    const el = document.getElementById(alan + 'Val');
+    const secili = alan === aliciAlani;
+    el.textContent = a[alan] || '—';
+    el.classList.toggle('empty', !a[alan]);
+    document.getElementById(alan + 'Kopyala').style.display = secili && a[alan] ? '' : 'none';
+    document.getElementById(alan + 'Label').textContent = { to: 'To', cc: 'Cc', bcc: 'Bcc' }[alan] + (secili ? ' — Veliler' : '');
+  });
+  const uyari = document.getElementById('aliciUyari');
+  const gorunur = aliciAlani !== 'bcc' && ogrenciSayisi > 1;
+  uyari.style.display = gorunur ? '' : 'none';
+  if (gorunur) uyari.textContent = '⚠️ Veli adresleri ' + (aliciAlani === 'to' ? 'To' : 'Cc') + ' alanında: bu maili alan veliler birbirlerinin e-posta adreslerini görecek.';
 }
 
 function ustteAc(url) {
@@ -1236,14 +1345,13 @@ function ustteAc(url) {
 }
 
 function kopyalaTumu() {
-  const bcc = document.getElementById('bccVal').textContent;
-  let tam;
-  if (aktifSablon === 'serbest') {
-    tam = `Bcc: ${bcc}`;
-  } else {
+  const a = alicilar();
+  const ad = { to: 'To', cc: 'Cc', bcc: 'Bcc' }[aliciAlani];
+  let tam = `${ad}: ${a[aliciAlani]}`;
+  if (aktifSablon !== 'serbest') {
     const konu = document.getElementById('konuVal').innerText || document.getElementById('konuVal').textContent;
     const metin = document.getElementById('metinVal').innerText || document.getElementById('metinVal').textContent;
-    tam = `Bcc: ${bcc}\n\nKonu: ${konu}\n\n${metin}`;
+    tam += `\n\nKonu: ${konu}\n\n${metin}`;
   }
   navigator.clipboard.writeText(tam).then(() => showToast('Tümü kopyalandı ✓'));
 }
@@ -1562,7 +1670,7 @@ function temizleListe() {
   sonuc.textContent = 'Liste temizlendi.';
 }
 
-/* ===================== ÖĞRENCİ SİLME (TEK TEK) ===================== */
+/* ===================== ÖĞRENCİ SİLME (SEÇEREK / TOPLU) ===================== */
 let silmeModu = false;
 
 function toggleSilmeModu() {
@@ -1570,21 +1678,46 @@ function toggleSilmeModu() {
   const btn = document.getElementById('silBtn');
   btn.classList.toggle('active', silmeModu);
   btn.textContent = silmeModu ? '✕ Silme Modundan Çık' : '🗑 Öğrenci Sil';
+  document.getElementById('silBar').style.display = silmeModu ? '' : 'none';
   secilenler.clear();
   renderList();
+  guncelle();
 }
 
-function ogrenciSil(key) {
-  const o = OGRENCILER.find(x => (x.sinif + '_' + x.ad + '_' + x.soyad) === key);
-  if (!o) return;
-  if (!confirm(`${o.ad} ${o.soyad} (${o.sinif}) listeden silinsin mi?`)) return;
-  OGRENCILER = OGRENCILER.filter(x => (x.sinif + '_' + x.ad + '_' + x.soyad) !== key);
-  secilenler.delete(key);
+function silButonunuGuncelle() {
+  const btn = document.getElementById('silOnayBtn');
+  if (!btn) return;
+  btn.disabled = secilenler.size === 0;
+  btn.textContent = secilenler.size ? `🗑 Seçilen ${secilenler.size} öğrenciyi sil` : 'Seçilenleri sil';
+}
+
+function seciliOgrencileriSil() {
+  const anahtar = o => o.sinif + '_' + o.ad + '_' + o.soyad;
+  const silinecek = OGRENCILER.filter(o => secilenler.has(anahtar(o)));
+  if (!silinecek.length) return;
+
+  let mesaj;
+  if (silinecek.length === OGRENCILER.length) {
+    mesaj = `Listedeki TÜM öğrenciler (${silinecek.length} kişi) silinecek.`;
+  } else {
+    const siniflar = [...new Set(silinecek.map(o => o.sinif))];
+    const tamSiniflar = siniflar.filter(s => OGRENCILER.filter(o => o.sinif === s).length === silinecek.filter(o => o.sinif === s).length);
+    const isimler = silinecek.slice(0, 5).map(o => `${o.ad} ${o.soyad} (${o.sinif})`).join('\n');
+    mesaj = `${silinecek.length} öğrenci silinecek` +
+      (tamSiniflar.length ? ` — ${tamSiniflar.join(', ')} sınıfının tamamı dahil` : '') + ':\n\n' +
+      isimler + (silinecek.length > 5 ? `\n… ve ${silinecek.length - 5} kişi daha` : '');
+  }
+  if (!confirm(mesaj + '\n\nEmin misiniz?')) return;
+
+  OGRENCILER = OGRENCILER.filter(o => !secilenler.has(anahtar(o)));
+  secilenler.clear();
+  if (aktifSinif !== 'hepsi' && !OGRENCILER.some(o => o.sinif === aktifSinif)) aktifSinif = 'hepsi';
   initSinifTabs();
   renderList();
   guncelle();
   kaydet();
-  showToast('Öğrenci silindi');
+  showToast(`${silinecek.length} öğrenci silindi`);
+  if (!OGRENCILER.length) toggleSilmeModu();
 }
 
 /* ===================== ŞABLON EKLE / DÜZENLE / SİL ===================== */
