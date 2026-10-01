@@ -818,16 +818,36 @@ header {
 </head>
 <body>
 <script>
-// Ana kod hiç çalışmazsa (ör. dosya Apps Script'e eksik yapıştırıldıysa) boş ekran yerine uyarı göster.
-// Bu blok ayrı olduğu için ana koddaki bir hatadan etkilenmez.
-setTimeout(function () {
-  if (window.__uygulamaHazir) return;
-  var d = document.createElement('div');
-  d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#C0392B;color:#fff;padding:14px 20px;font:14px/1.5 sans-serif';
-  d.innerHTML = '<b>Uygulama yüklenemedi.</b> Index dosyası Apps Script\'e eksik yapıştırılmış olabilir: ' +
-    'Index dosyasının en son satırı <code>&lt;/html&gt;</code> olmalı. Dosyayı silip tamamını yeniden yapıştırın, kaydedin ve yeni sürüm olarak yayınlayın.';
-  document.body.appendChild(d);
-}, 6000);
+// Hata göstericisi: ana koddan bağımsız çalışır. Bir hata olursa (ya da uygulama hiç başlamazsa)
+// ekranın üstünde kırmızı bir şeritte nedenini yazar; F12 açmaya gerek kalmaz.
+(function () {
+  var hatalar = [];
+  function goster(baslik) {
+    var d = document.getElementById('hataSeridi');
+    if (!d) {
+      d = document.createElement('div');
+      d.id = 'hataSeridi';
+      d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#C0392B;color:#fff;padding:12px 20px;font:13px/1.5 sans-serif;max-height:40vh;overflow:auto';
+      (document.body || document.documentElement).appendChild(d);
+    }
+    d.innerHTML = '<b>' + baslik + '</b><br>Bu kırmızı yazının ekran görüntüsünü alıp gönderin.' +
+      (hatalar.length ? '<pre style="white-space:pre-wrap;margin-top:6px;font:12px monospace">' +
+        hatalar.join('\n').replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }) + '</pre>' : '');
+  }
+  window.addEventListener('error', function (e) {
+    hatalar.push((e.message || 'Bilinmeyen hata') + (e.lineno ? ' (satır ' + e.lineno + ':' + e.colno + ')' : ''));
+    goster('Uygulamada bir hata oluştu.');
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e.reason;
+    hatalar.push('İşlem hatası: ' + (r && r.message ? r.message : String(r)));
+    goster('Uygulamada bir hata oluştu.');
+  });
+  window.__hataBildir = function (baslik, ayrinti) { if (ayrinti) hatalar.push(ayrinti); goster(baslik); };
+  setTimeout(function () {
+    if (!window.__uygulamaHazir) goster('Uygulama başlatılamadı.');
+  }, 6000);
+})();
 </script>
 
 <header>
@@ -1475,7 +1495,7 @@ function normBaslik(s) {
     .toLocaleLowerCase('tr')
     .replace(/ı/g,'i').replace(/ğ/g,'g').replace(/ü/g,'u')
     .replace(/ş/g,'s').replace(/ö/g,'o').replace(/ç/g,'c')
-    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .replace(/[^a-z0-9]/g,'');
 }
 
@@ -1943,7 +1963,7 @@ window.__uygulamaHazir = true;
     await yukle();
   } catch (e) {
     yuklemeBasarisiz = GOOGLE_MODU;
-    showToast('Liste yüklenemedi. Sayfayı yenileyin.');
+    window.__hataBildir('Listeniz Google hesabınızdan yüklenemedi.', 'Sunucu: ' + (e && e.message ? e.message : String(e)));
   }
   hepsiniCiz();
 })();
