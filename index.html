@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veli Mail Aracı</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F4F0;
+  --surface: #FFFFFF;
+  --surface2: #EEECEA;
+  --border: #D8D5D0;
+  --border2: #C8C4BE;
+  --text: #1A1916;
+  --text2: #6B6760;
+  --text3: #9B9790;
+  --accent: #2D5BE3;
+  --accent-bg: #EEF2FC;
+  --accent-border: #B8C8F5;
+  --green: #1A7A4A;
+  --green-bg: #EAF5EF;
+  --red: #C0392B;
+  --red-bg: #FDECEA;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-dot {
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.header-meta {
+  font-size: 12px;
+  color: var(--text3);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.header-btn {
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.header-btn:hover { background: #1E47C9; }
+.header-btn.ghost {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text2);
+}
+.header-btn.ghost:hover { background: var(--surface2); border-color: var(--border2); color: var(--text); }
+.header-btn.ghost.active {
+  background: var(--red-bg);
+  border-color: var(--red);
+  color: var(--red);
+}
+.header-btn.ghost.active:hover { background: #FCE0DD; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 52px);
+}
+
+/* LEFT PANEL */
+.left-panel {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 52px);
+  position: sticky;
+  top: 52px;
+  overflow: hidden;
+}
+
+.panel-section {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-section:last-child { border-bottom: none; }
+
+.section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 10px;
+}
+
+/* SINIF FİLTRE */
+.sinif-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.sinif-tab {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  transition: all 0.12s;
+}
+
+.sinif-tab:hover { background: var(--surface2); border-color: var(--border2); color: var(--text); }
+.sinif-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ÖĞRENCİ LİSTESİ */
+.ogrenci-section {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.ogrenci-header {
+  padding: 12px 16px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.ogrenci-search {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface2);
+  outline: none;
+  margin-right: 8px;
+}
+.ogrenci-search:focus { border-color: var(--accent-border); background: #fff; }
+.ogrenci-search::placeholder { color: var(--text3); }
+
+.select-all-btn {
+  font-size: 11px;
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+  border: none;
+  background: none;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 500;
+}
+.select-all-btn:hover { text-decoration: underline; }
+
+.ogrenci-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.ogrenci-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+  border: 1px solid transparent;
+}
+.ogrenci-item:hover { background: var(--surface2); }
+.ogrenci-item-sil { border-color: transparent; }
+.ogrenci-item-sil:hover { background: var(--red-bg); border-color: var(--red); }
+.ogrenci-item-sil .ogrenci-sil-icon { opacity: 0; transition: opacity 0.1s; font-size: 14px; }
+.ogrenci-item-sil:hover .ogrenci-sil-icon { opacity: 1; }
+.ogrenci-item.selected {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+
+.ogrenci-checkbox {
+  width: 16px; height: 16px;
+  border: 1.5px solid var(--border2);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.1s;
+}
+.ogrenci-item.selected .ogrenci-checkbox {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ogrenci-item.selected .ogrenci-checkbox::after {
+  content: '';
+  width: 8px; height: 5px;
+  border-left: 1.5px solid #fff;
+  border-bottom: 1.5px solid #fff;
+  transform: rotate(-45deg) translateY(-1px);
+  display: block;
+}
+
+.ogrenci-info { flex: 1; min-width: 0; }
+.ogrenci-name { font-weight: 500; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ogrenci-sinif { font-size: 11px; color: var(--text3); font-family: 'IBM Plex Mono', monospace; }
+
+.ogrenci-empty { padding: 32px 20px; text-align: center; color: var(--text3); font-size: 13px; line-height: 1.6; }
+.ogrenci-empty .empty-icon { font-size: 28px; opacity: 0.4; margin-bottom: 8px; }
+.ogrenci-empty .empty-cta {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 7px 14px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 13px;
+}
+.ogrenci-empty .empty-cta:hover { background: #1E47C9; }
+
+/* RIGHT PANEL */
+.right-panel {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ŞABLON SEÇİMİ */
+.sablon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.sablon-card {
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  background: var(--surface);
+  transition: all 0.12s;
+  position: relative;
+}
+.sablon-card:hover { border-color: var(--border2); background: var(--surface2); }
+.sablon-card.active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.sablon-icon { font-size: 18px; margin-bottom: 6px; }
+.sablon-label { font-size: 13px; font-weight: 500; color: var(--text); padding-right: 16px; }
+.sablon-desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+.sablon-gear {
+  position: absolute;
+  top: 6px; right: 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text3);
+  padding: 3px 5px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.sablon-gear:hover { background: var(--surface); color: var(--text); }
+
+/* ÇIKTI */
+.output-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.output-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.output-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.output-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text2);
+}
+.btn:hover { background: var(--surface2); color: var(--text); }
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn.primary:hover { background: #1E47C9; }
+.btn.success { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+
+.output-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+
+.mail-field { display: flex; flex-direction: column; gap: 5px; }
+
+.field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.field-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+
+.field-copy {
+  font-size: 11px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 500;
+  padding: 0;
+}
+.field-copy:hover { text-decoration: underline; }
+
+.field-val {
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+  word-break: break-all;
+  min-height: 38px;
+}
+
+.field-val.multiline {
+  white-space: pre-line;
+  word-break: normal;
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+
+.field-val.mono {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+
+.field-val.empty { color: var(--text3); font-style: italic; }
+
+/* PLACEHOLDER STATE */
+.placeholder-state {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text3);
+}
+
+.placeholder-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.placeholder-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+
+.placeholder-sub { font-size: 13px; }
+
+/* SEÇILI BADGE */
+.selected-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+
+.sablon-card.ozel, .sablon-card.ekle {
+  border-style: dashed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text2);
+}
+.sablon-card.ozel:hover, .sablon-card.ekle:hover { color: var(--text); }
+.sablon-card.ozel.active { border-style: solid; color: var(--accent); }
+.sablon-plus { font-size: 22px; font-weight: 300; line-height: 1; }
+
+.sablon-card.serbest .sablon-icon { font-size: 18px; }
+
+.bos-not { color: var(--text3); font-style: italic; }
+
+.field-val.editable {
+  outline: none;
+  cursor: text;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 38px;
+  white-space: pre-wrap;
+  word-break: normal;
+}
+.field-val.editable:focus {
+  border-color: var(--accent-border);
+  background: #fff;
+}
+.field-val.editable[placeholder]:empty::before {
+  content: attr(placeholder);
+  color: var(--text3);
+}
+
+/* Scrollbar */
+.ogrenci-list::-webkit-scrollbar { width: 4px; }
+.ogrenci-list::-webkit-scrollbar-track { background: transparent; }
+.ogrenci-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* KOPYALANDI TOAST */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--text);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.2s;
+  pointer-events: none;
+  z-index: 999;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* ---- MODAL (Öğrenci Ekle) ---- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,25,22,0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 620px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-title { font-size: 17px; font-weight: 600; color: var(--text); }
+.modal-close {
+  border: none; background: none; cursor: pointer;
+  font-size: 22px; color: var(--text3); line-height: 1;
+  width: 32px; height: 32px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-close:hover { background: var(--surface2); color: var(--text); }
+
+.modal-body { padding: 24px; }
+
+.dropzone {
+  border: 2px dashed var(--border2);
+  border-radius: var(--radius-lg);
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--bg);
+}
+.dropzone:hover, .dropzone.drag {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.dropzone-icon {
+  width: 56px; height: 56px;
+  background: var(--accent-bg);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+  font-size: 26px;
+}
+.dropzone-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.dropzone-sub { font-size: 13px; color: var(--text3); }
+
+.duzen-info {
+  margin-top: 20px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  font-size: 12.5px;
+  color: var(--text2);
+  line-height: 1.7;
+}
+.duzen-info b { color: var(--text); font-weight: 600; }
+.duzen-cols {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 8px;
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.modal-footer .left-note { font-size: 12px; color: var(--text3); }
+.modal-footer .actions { display: flex; gap: 10px; }
+
+.modal-btn {
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text2);
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+.modal-btn:hover { background: var(--surface2); color: var(--text); }
+.modal-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.modal-btn.primary:hover { background: #1E47C9; }
+
+.import-sonuc {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  display: none;
+}
+.import-sonuc.ok { background: var(--green-bg); border: 1px solid var(--green); color: var(--green); display: block; }
+.import-sonuc.err { background: var(--red-bg); border: 1px solid var(--red); color: var(--red); display: block; }
+
+/* MODAL SEKME */
+.modal-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-tab {
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.12s;
+}
+.modal-tab:hover { color: var(--text); }
+.modal-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* MANUEL FORM */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.form-field { display: flex; flex-direction: column; gap: 5px; }
+.form-field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+}
+.form-field .req { color: var(--red); }
+.form-field input, .form-field textarea {
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface2);
+  outline: none;
+  transition: all 0.12s;
+  resize: vertical;
+}
+.form-field input:focus, .form-field textarea:focus { border-color: var(--accent-border); background: #fff; }
+.form-field input::placeholder { color: var(--text3); }
+
+.son-eklenen {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.6;
+  max-height: 90px;
+  overflow-y: auto;
+}
+.son-eklenen .se-item { color: var(--green); }
+
+@media (max-width: 520px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .layout { grid-template-columns: 1fr; }
+  .left-panel { height: auto; position: static; max-height: 50vh; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    Veli Mail Aracı
+  </div>
+  <div class="header-right">
+    <span class="header-meta" id="ogrenciSayaci">0 öğrenci</span>
+    <button class="header-btn ghost" id="silBtn" onclick="toggleSilmeModu()">🗑 Öğrenci Sil</button>
+    <button class="header-btn" onclick="acModal()">+ Öğrenci Ekle</button>
+    <span class="header-meta">2025–2026</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SOL PANEL -->
+  <div class="left-panel">
+
+    <div class="panel-section">
+      <div class="section-label">Sınıf</div>
+      <div class="sinif-tabs" id="sinifTabs">
+        <button class="sinif-tab active" data-sinif="hepsi" onclick="setSinif(this,'hepsi')">Hepsi</button>
+      </div>
+    </div>
+
+    <div class="ogrenci-section">
+      <div class="ogrenci-header">
+        <input class="ogrenci-search" type="text" placeholder="Öğrenci ara..." id="searchInput" oninput="renderList()">
+        <button class="select-all-btn" onclick="toggleSelectAll()">Tümünü seç</button>
+      </div>
+      <div class="ogrenci-list" id="ogrenciList"></div>
+    </div>
+
+  </div>
+
+  <!-- SAĞ PANEL -->
+  <div class="right-panel">
+
+    <!-- ŞABLON -->
+    <div>
+      <div class="section-header">
+        <div class="section-title">Mail şablonu</div>
+        <div class="selected-badge" id="secilenBadge">0 öğrenci seçili</div>
+      </div>
+      <div class="sablon-grid" id="sablonGrid"></div>
+    </div>
+
+    <!-- ÇIKTI -->
+    <div class="output-section" id="outputSection">
+      <div class="placeholder-state" id="placeholderState">
+        <div class="placeholder-icon">✉</div>
+        <div class="placeholder-title">Hazır olduğunda burada görünecek</div>
+        <div class="placeholder-sub">Sol taraftan öğrenci(ler) seçin, ardından şablon belirleyin.</div>
+      </div>
+
+      <div id="outputContent" style="display:none">
+        <div class="output-header">
+          <div class="output-title">Hazırlanan mail</div>
+          <div class="output-actions">
+            <button class="btn" onclick="kopyalaTumu()">Tümünü kopyala</button>
+            <button class="btn primary" onclick="gmaildeAc()">Gmail'de aç ↗</button>
+          </div>
+        </div>
+        <div class="output-body">
+          <div class="mail-field">
+            <div class="field-label">To</div>
+            <div class="field-val empty">—</div>
+          </div>
+          <div class="mail-field">
+            <div class="field-label">Cc</div>
+            <div class="field-val empty">—</div>
+          </div>
+          <div class="mail-field">
+            <div class="field-header">
+              <div class="field-label">Bcc — Alıcılar</div>
+              <button class="field-copy" onclick="kopyala('bccVal')">Kopyala</button>
+            </div>
+            <div class="field-val mono" id="bccVal"></div>
+          </div>
+          <div class="mail-field">
+            <div class="field-header">
+              <div class="field-label">Konu</div>
+              <button class="field-copy" onclick="kopyala('konuVal')">Kopyala</button>
+            </div>
+            <div class="field-val" id="konuVal"></div>
+          </div>
+          <div class="mail-field">
+            <div class="field-header">
+              <div class="field-label">Mail metni</div>
+              <button class="field-copy" onclick="kopyala('metinVal')">Kopyala</button>
+            </div>
+            <div class="field-val multiline" id="metinVal"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ÖĞRENCİ EKLE MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Öğrenci Listesi İçe Aktar</div>
+      <button class="modal-close" onclick="kapatModal()">&times;</button>
+    </div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" id="tabDosya" onclick="modalSekme('dosya')">📄 Dosyadan İçe Aktar</button>
+      <button class="modal-tab" id="tabManuel" onclick="modalSekme('manuel')">✏️ Tek Tek Ekle</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- DOSYADAN İÇE AKTAR -->
+      <div id="panelDosya">
+        <input type="file" id="dosyaInput" accept=".xlsx,.xls,.csv,.txt" style="display:none">
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-icon">☁️</div>
+          <div class="dropzone-title">Dosyanızı buraya sürükleyin veya göz atın</div>
+          <div class="dropzone-sub">Desteklenen formatlar: .xlsx, .xls, .csv (Maks. 5MB)</div>
+        </div>
+
+        <div class="duzen-info">
+          <b>Excel düzeni:</b> sütunlar sırasıyla şu şekilde olmalı:
+          <span class="duzen-cols">Sınıf&nbsp;|&nbsp;No&nbsp;|&nbsp;Ad&nbsp;|&nbsp;Soyad&nbsp;|&nbsp;Baba Adı&nbsp;|&nbsp;Baba E-Mail&nbsp;|&nbsp;Anne Adı&nbsp;|&nbsp;Anne E-Mail</span>
+          İlk satır başlık olabilir (otomatik atlanır). Boş e-posta hücreleri sorun değildir.
+        </div>
+      </div>
+
+      <!-- TEK TEK EKLE (MANUEL) -->
+      <div id="panelManuel" style="display:none">
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Sınıf <span class="req">*</span></label>
+            <input type="text" id="mSinif" placeholder="Örn: 6-A">
+          </div>
+          <div class="form-field">
+            <label>No</label>
+            <input type="text" id="mNo" placeholder="Örn: 101">
+          </div>
+          <div class="form-field">
+            <label>Ad <span class="req">*</span></label>
+            <input type="text" id="mAd" placeholder="Öğrenci adı">
+          </div>
+          <div class="form-field">
+            <label>Soyad</label>
+            <input type="text" id="mSoyad" placeholder="Öğrenci soyadı">
+          </div>
+          <div class="form-field">
+            <label>Baba Adı</label>
+            <input type="text" id="mBabaAd" placeholder="Baba adı soyadı">
+          </div>
+          <div class="form-field">
+            <label>Baba E-Mail</label>
+            <input type="email" id="mBabaMail" placeholder="baba@mail.com">
+          </div>
+          <div class="form-field">
+            <label>Anne Adı</label>
+            <input type="text" id="mAnneAd" placeholder="Anne adı soyadı">
+          </div>
+          <div class="form-field">
+            <label>Anne E-Mail</label>
+            <input type="email" id="mAnneMail" placeholder="anne@mail.com">
+          </div>
+        </div>
+        <button class="modal-btn primary" style="margin-top:16px; width:100%;" onclick="manuelEkle()">Öğrenciyi Listeye Ekle</button>
+        <div class="son-eklenen" id="sonEklenen"></div>
+      </div>
+
+      <div class="import-sonuc" id="importSonuc"></div>
+    </div>
+    <div class="modal-footer">
+      <div class="left-note">Mevcut listeye <b>eklenir</b>, üzerine yazmaz.</div>
+      <div class="actions">
+        <button class="modal-btn" onclick="temizleListe()">Listeyi Temizle</button>
+        <button class="modal-btn primary" onclick="kapatModal()">Bitti</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ŞABLON EKLE/DÜZENLE MODAL -->
+<div class="modal-overlay" id="sablonModalOverlay">
+  <div class="modal" style="max-width: 480px;">
+    <div class="modal-header">
+      <div class="modal-title" id="sablonModalBaslik">Yeni Şablon</div>
+      <button class="modal-close" onclick="kapatSablonModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" style="grid-template-columns: 1fr;">
+        <div class="form-field" style="max-width: 90px;">
+          <label>Emoji <span style="color:var(--text3); font-weight:400;">(opsiyonel)</span></label>
+          <input type="text" id="sEmoji" maxlength="4" placeholder="📋">
+        </div>
+        <div class="form-field">
+          <label>Başlık <span class="req">*</span></label>
+          <input type="text" id="sBaslik" placeholder="Örn: Devamsızlık Bildirimi">
+        </div>
+        <div class="form-field">
+          <label>Mail metni <span class="req">*</span></label>
+          <textarea id="sMetin" rows="7" placeholder="Sayın Veli,&#10;&#10;..."></textarea>
+        </div>
+      </div>
+      <div class="import-sonuc" id="sablonSonuc"></div>
+    </div>
+    <div class="modal-footer">
+      <div class="left-note" id="sablonSilAlani" style="display:none;">
+        <button class="modal-btn" style="border-color:var(--red); color:var(--red);" onclick="sablonSil()">Şablonu Sil</button>
+      </div>
+      <div class="actions">
+        <button class="modal-btn" onclick="kapatSablonModal()">İptal</button>
+        <button class="modal-btn primary" onclick="sablonKaydet()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Kopyalandı ✓</div>
+
+<!-- SheetJS: Excel (.xlsx) okumak için -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+let OGRENCILER = [];
+
+let SABLONLAR = [
+  {
+    emoji: '📋',
+    baslik: 'Ödev eksiği',
+    konu: 'Fen Bilimleri Ödev Eksiği',
+    metin: `Sayın Veli,\n\nÖğrencimizin son ödevinde eksiği olduğunu görüyorum. Ödevlerin düzenli tamamlanması, konuların pekişmesi açısından büyük önem taşımaktadır. Bu konuda desteğinizi rica ederim.\n\nSaygılarımla,`
+  },
+  {
+    emoji: '🤝',
+    baslik: 'Toplantı isteği',
+    konu: 'Toplantı Daveti',
+    metin: `Sayın Veli,\n\nÖğrencimizin durumunu değerlendirmek üzere sistem üzerinden toplantı almanızı rica ederim. Eğer sistem üzerinden uygun bir saat bulamazsanız lütfen benimle iletişime geçin.\n\nSaygılarımla,`
+  },
+  {
+    emoji: '🎒',
+    baslik: 'Materyal eksiği',
+    konu: 'Fen Bilimleri Materyal Eksiği',
+    metin: `Sayın Veli,\n\nBir süredir öğrencimizin ders kitapçığını okula getirmediğini görüyorum. Kitapçık, derslerimizde aktif olarak kullandığımız temel materyallerden biri olduğundan, bu durum öğrenme sürecini olumsuz etkileyebilmektedir.\n\nKitapçığın kaybolması ya da ulaşılamaması durumunda, dijital kopyasına Google Classroom üzerinden erişilebilmektedir. Classroom'da SCIENCE_BOOKLETS başlığı altında bulunmaktadır.\n\nBu konuyu birlikte takip edeceğimize inanıyor, işbirliğiniz için şimdiden teşekkür ediyorum. Herhangi bir sorunuz olursa lütfen benimle iletişime geçmekten çekinmeyiniz.\n\nSaygılarımla,`
+  }
+];
+
+let aktifSinif = 'hepsi';
+let secilenler = new Set();
+let aktifSablon = null;
+
+// Sınıf tablarını oluştur
+function initSinifTabs() {
+  const cont = document.getElementById('sinifTabs');
+  cont.innerHTML = '<button class="sinif-tab" data-sinif="hepsi" onclick="setSinif(this,\'hepsi\')">Hepsi</button>';
+  const siniflar = [...new Set(OGRENCILER.map(o => o.sinif))].sort();
+  siniflar.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'sinif-tab';
+    btn.dataset.sinif = s;
+    btn.textContent = s;
+    btn.onclick = () => setSinif(btn, s);
+    cont.appendChild(btn);
+  });
+  document.querySelectorAll('.sinif-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.sinif === aktifSinif);
+  });
+}
+
+function setSinif(el, sinif) {
+  document.querySelectorAll('.sinif-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  aktifSinif = sinif;
+  secilenler.clear();
+  renderList();
+  guncelle();
+}
+
+function getFiltreli() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  return OGRENCILER.filter(o => {
+    const sinifOk = aktifSinif === 'hepsi' || o.sinif === aktifSinif;
+    const searchOk = !q || (o.ad + ' ' + o.soyad).toLowerCase().includes(q);
+    return sinifOk && searchOk;
+  });
+}
+
+function renderList() {
+  const list = document.getElementById('ogrenciList');
+
+  if (OGRENCILER.length === 0) {
+    list.innerHTML = `<div class="ogrenci-empty">
+      <div class="empty-icon">👥</div>
+      Henüz öğrenci eklenmedi.<br>Excel/CSV dosyanızı içe aktarın.
+      <div class="empty-cta" onclick="acModal()">+ Öğrenci Ekle</div>
+    </div>`;
+    updateBadge();
+    return;
+  }
+
+  const filtreli = getFiltreli();
+  if (filtreli.length === 0) {
+    list.innerHTML = '<div class="ogrenci-empty">Öğrenci bulunamadı</div>';
+    updateBadge();
+    return;
+  }
+
+  list.innerHTML = filtreli.map((o, i) => {
+    const key = o.sinif + '_' + o.ad + '_' + o.soyad;
+    const safeKey = key.replace(/'/g,"\\'");
+    const sel = secilenler.has(key);
+    if (silmeModu) {
+      return `<div class="ogrenci-item ogrenci-item-sil" onclick="ogrenciSil('${safeKey}')">
+        <div class="ogrenci-info">
+          <div class="ogrenci-name">${o.ad} ${o.soyad}</div>
+          <div class="ogrenci-sinif">${o.sinif}</div>
+        </div>
+        <div class="ogrenci-sil-icon">🗑</div>
+      </div>`;
+    }
+    return `<div class="ogrenci-item${sel ? ' selected' : ''}" onclick="toggleOgrenci('${safeKey}')">
+      <div class="ogrenci-checkbox"></div>
+      <div class="ogrenci-info">
+        <div class="ogrenci-name">${o.ad} ${o.soyad}</div>
+        <div class="ogrenci-sinif">${o.sinif}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  updateBadge();
+}
+
+function toggleOgrenci(key) {
+  if (secilenler.has(key)) secilenler.delete(key);
+  else secilenler.add(key);
+  renderList();
+  guncelle();
+}
+
+function toggleSelectAll() {
+  const filtreli = getFiltreli();
+  const keys = filtreli.map(o => o.sinif + '_' + o.ad + '_' + o.soyad);
+  const allSelected = keys.length > 0 && keys.every(k => secilenler.has(k));
+  if (allSelected) keys.forEach(k => secilenler.delete(k));
+  else keys.forEach(k => secilenler.add(k));
+  renderList();
+  guncelle();
+}
+
+function updateBadge() {
+  document.getElementById('secilenBadge').textContent = secilenler.size + ' öğrenci seçili';
+  document.getElementById('ogrenciSayaci').textContent = OGRENCILER.length + ' öğrenci';
+}
+
+function initSablonlar() {
+  const grid = document.getElementById('sablonGrid');
+
+  const serbestKart = `
+    <div class="sablon-card serbest${aktifSablon === 'serbest' ? ' active' : ''}" onclick="secSerbest()">
+      <div class="sablon-icon">✉️</div>
+      <div class="sablon-label">Serbest mail</div>
+    </div>`;
+
+  const kartlar = SABLONLAR.map((s, i) => `
+    <div class="sablon-card${aktifSablon === i ? ' active' : ''}" onclick="secSablon(${i})">
+      <button class="sablon-gear" onclick="event.stopPropagation(); acSablonDuzenle(${i})" title="Düzenle">⚙️</button>
+      <div class="sablon-icon">${s.emoji || '📄'}</div>
+      <div class="sablon-label">${s.baslik}</div>
+    </div>
+  `).join('');
+
+  const ekleKart = `
+    <div class="sablon-card ekle" onclick="acSablonEkle()">
+      <div class="sablon-plus">+</div>
+      <div class="sablon-label">Şablon Ekle</div>
+    </div>`;
+
+  grid.innerHTML = serbestKart + kartlar + ekleKart;
+}
+
+function secSablon(i) {
+  aktifSablon = i;
+  initSablonlar();
+  guncelle();
+}
+
+function secSerbest() {
+  aktifSablon = 'serbest';
+  initSablonlar();
+  guncelle();
+}
+
+function guncelle() {
+  updateBadge();
+  const placeholder = document.getElementById('placeholderState');
+  const outputContent = document.getElementById('outputContent');
+
+  if (aktifSablon === null) {
+    placeholder.style.display = '';
+    outputContent.style.display = 'none';
+    return;
+  }
+
+  placeholder.style.display = 'none';
+  outputContent.style.display = '';
+
+  const secOgrenciler = OGRENCILER.filter(o => secilenler.has(o.sinif + '_' + o.ad + '_' + o.soyad));
+  const tumMails = [...new Set(secOgrenciler.flatMap(o => o.mails))];
+
+  document.getElementById('bccVal').textContent = tumMails.join(', ');
+
+  const konuEl = document.getElementById('konuVal');
+  const metinEl = document.getElementById('metinVal');
+
+  if (aktifSablon === 'serbest') {
+    konuEl.contentEditable = 'false';
+    konuEl.classList.remove('editable');
+    metinEl.contentEditable = 'false';
+    metinEl.classList.remove('editable');
+    konuEl.innerHTML = '<span class="bos-not">Gmail\'de yazılacak</span>';
+    metinEl.innerHTML = '<span class="bos-not">Konu ve mesaj Gmail üzerinde elle yazılacak</span>';
+  } else {
+    konuEl.contentEditable = 'false';
+    konuEl.classList.remove('editable');
+    metinEl.contentEditable = 'false';
+    metinEl.classList.remove('editable');
+    const sablon = SABLONLAR[aktifSablon];
+    konuEl.textContent = sablon.konu;
+    metinEl.textContent = sablon.metin;
+  }
+}
+
+function kopyala(id) {
+  if (aktifSablon === 'serbest' && (id === 'konuVal' || id === 'metinVal')) {
+    showToast('Bu alan Gmail\'de yazılacak');
+    return;
+  }
+  const el = document.getElementById(id);
+  const text = el.innerText || el.textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('Kopyalandı ✓'));
+}
+
+function gmaildeAc() {
+  const bcc = document.getElementById('bccVal').textContent;
+  let konu = '', metin = '';
+  if (aktifSablon !== 'serbest') {
+    konu = document.getElementById('konuVal').innerText || document.getElementById('konuVal').textContent;
+    metin = document.getElementById('metinVal').innerText || document.getElementById('metinVal').textContent;
+  }
+  const enc = encodeURIComponent;
+  const webUrl = 'https://mail.google.com/mail/?view=cm&fs=1&bcc=' + enc(bcc) + '&su=' + enc(konu) + '&body=' + enc(metin);
+  const appUrl = 'googlegmail:///co?bcc=' + enc(bcc) + '&subject=' + enc(konu) + '&body=' + enc(metin);
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile) {
+    window.location.href = appUrl;
+    setTimeout(function() { window.location.href = webUrl; }, 1200);
+  } else {
+    window.open(webUrl, '_blank');
+  }
+}
+
+function kopyalaTumu() {
+  const bcc = document.getElementById('bccVal').textContent;
+  let tam;
+  if (aktifSablon === 'serbest') {
+    tam = `Bcc: ${bcc}`;
+  } else {
+    const konu = document.getElementById('konuVal').innerText || document.getElementById('konuVal').textContent;
+    const metin = document.getElementById('metinVal').innerText || document.getElementById('metinVal').textContent;
+    tam = `Bcc: ${bcc}\n\nKonu: ${konu}\n\n${metin}`;
+  }
+  navigator.clipboard.writeText(tam).then(() => showToast('Tümü kopyalandı ✓'));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+/* ===================== ÖĞRENCİ EKLE / IMPORT ===================== */
+
+function acModal() {
+  document.getElementById('modalOverlay').classList.add('show');
+  document.getElementById('importSonuc').className = 'import-sonuc';
+}
+function kapatModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+
+// Modal sekme geçişi
+function modalSekme(hangi) {
+  const dosya = hangi === 'dosya';
+  document.getElementById('panelDosya').style.display = dosya ? '' : 'none';
+  document.getElementById('panelManuel').style.display = dosya ? 'none' : '';
+  document.getElementById('tabDosya').classList.toggle('active', dosya);
+  document.getElementById('tabManuel').classList.toggle('active', !dosya);
+  document.getElementById('importSonuc').className = 'import-sonuc';
+}
+
+// Tek tek öğrenci ekleme
+function manuelEkle() {
+  const sinif = document.getElementById('mSinif').value.trim();
+  const no = document.getElementById('mNo').value.trim();
+  const ad = document.getElementById('mAd').value.trim();
+  const soyad = document.getElementById('mSoyad').value.trim();
+  const babaMail = document.getElementById('mBabaMail').value.trim();
+  const anneMail = document.getElementById('mAnneMail').value.trim();
+  const sonuc = document.getElementById('importSonuc');
+
+  if (!sinif || !ad) {
+    sonuc.className = 'import-sonuc err';
+    sonuc.textContent = 'Sınıf ve Ad alanları zorunludur.';
+    return;
+  }
+
+  const yeniOgrenci = { no, sinif, ad, soyad, mails: [] };
+  const zatenVar = OGRENCILER.some(o => dupAnahtar(o) === dupAnahtar(yeniOgrenci));
+  if (zatenVar) {
+    const devamEt = confirm(`${ad} ${soyad} (${sinif}${no ? ', No: ' + no : ''}) zaten listede var. Yine de eklemek istiyor musunuz?`);
+    if (!devamEt) return;
+  }
+
+  const mails = [babaMail, anneMail].filter(m => m && m.includes('@'));
+  OGRENCILER.push({ no, sinif, ad, soyad, mails });
+
+  // arayüzü tazele
+  aktifSinif = 'hepsi';
+  secilenler.clear();
+  initSinifTabs();
+  renderList();
+  updateBadge();
+
+  // "son eklenen" listesine yaz
+  const se = document.getElementById('sonEklenen');
+  const div = document.createElement('div');
+  div.className = 'se-item';
+  div.textContent = '✓ ' + ad + ' ' + soyad + ' (' + sinif + ') eklendi';
+  se.prepend(div);
+
+  // formu temizle (sınıfı koru — aynı sınıftan peş peşe ekleme kolaylığı)
+  document.getElementById('mNo').value = '';
+  document.getElementById('mAd').value = '';
+  document.getElementById('mSoyad').value = '';
+  document.getElementById('mBabaAd').value = '';
+  document.getElementById('mBabaMail').value = '';
+  document.getElementById('mAnneAd').value = '';
+  document.getElementById('mAnneMail').value = '';
+  document.getElementById('mAd').focus();
+
+  kaydet();
+  sonuc.className = 'import-sonuc ok';
+  sonuc.textContent = ad + ' ' + soyad + ' eklendi. Toplam: ' + OGRENCILER.length;
+}
+document.getElementById('modalOverlay').addEventListener('click', function(e){
+  if (e.target === this) kapatModal();
+});
+
+// Dropzone davranışı
+const dz = document.getElementById('dropzone');
+const dosyaInput = document.getElementById('dosyaInput');
+dz.addEventListener('click', () => dosyaInput.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag');
+  if (e.dataTransfer.files.length) dosyaOku(e.dataTransfer.files[0]);
+});
+dosyaInput.addEventListener('change', e => {
+  if (e.target.files.length) dosyaOku(e.target.files[0]);
+  e.target.value = '';
+});
+
+// Sütun sırası: Sınıf, No, Ad, Soyad, Baba Adı, Baba E-Mail, Anne Adı, Anne E-Mail
+// Sadece parse eder, OGRENCILER'a dokunmaz. Duplike kontrolü dosyaOku içinde yapılır.
+function satirlariAyristir(rows) {
+  if (!rows.length) return { parsed: [], atlanan: 0 };
+  let start = 0;
+  const ilk = rows[0].map(c => (c || '').toString().toLowerCase().trim());
+  if (ilk.some(c => ['sınıf','sinif','ad','soyad','no'].includes(c))) start = 1;
+
+  const parsed = [];
+  let atlanan = 0;
+  for (let i = start; i < rows.length; i++) {
+    const r = rows[i].map(c => (c === undefined || c === null) ? '' : c.toString().trim());
+    if (r.every(c => c === '')) continue;
+    const sinif = r[0] || '';
+    const no    = r[1] || '';
+    const ad    = r[2] || '';
+    const soyad = r[3] || '';
+    const babaMail = r[5] || '';
+    const anneMail = r[7] || '';
+    if (!sinif || !ad) { atlanan++; continue; }
+    const mails = [babaMail, anneMail].filter(m => m && m.includes('@'));
+    parsed.push({ no, sinif, ad, soyad, mails });
+  }
+  return { parsed, atlanan };
+}
+
+function dupAnahtar(o) {
+  // No varsa Sınıf+No ile eşleştir, yoksa Sınıf+Ad+Soyad ile
+  if (o.no) return 'no:' + o.sinif + '_' + o.no;
+  return 'ad:' + o.sinif + '_' + o.ad + '_' + o.soyad;
+}
+
+let _bekleyenImport = null;
+
+function dosyaOku(file) {
+  const sonuc = document.getElementById('importSonuc');
+  const isExcel = /\.(xlsx|xls)$/i.test(file.name);
+  const reader = new FileReader();
+
+  reader.onload = function(ev) {
+    try {
+      let rows = [];
+      if (isExcel) {
+        const data = new Uint8Array(ev.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      } else {
+        const text = ev.target.result;
+        rows = text.split(/\r?\n/).filter(l => l.trim().length)
+                   .map(line => line.split(/[;,\t]/).map(c => c.trim().replace(/^"|"$/g,'')));
+      }
+      const { parsed, atlanan } = satirlariAyristir(rows);
+      if (parsed.length === 0) {
+        sonuc.className = 'import-sonuc err';
+        sonuc.textContent = 'Geçerli öğrenci bulunamadı. Sütun sırasını kontrol edin.';
+        return;
+      }
+
+      const mevcutAnahtarlar = new Set(OGRENCILER.map(dupAnahtar));
+      const yeniler = parsed.filter(o => !mevcutAnahtarlar.has(dupAnahtar(o)));
+      const tekrarlar = parsed.filter(o => mevcutAnahtarlar.has(dupAnahtar(o)));
+
+      if (tekrarlar.length === 0) {
+        importTamamla(parsed, atlanan);
+        return;
+      }
+
+      // Duplike var: kullanıcıya sor
+      _bekleyenImport = { parsed, yeniler, tekrarlar, atlanan };
+      const isimler = tekrarlar.slice(0, 6).map(o => o.ad + ' ' + o.soyad + ' (' + o.sinif + ')').join(', ');
+      const fazla = tekrarlar.length > 6 ? ` ve ${tekrarlar.length - 6} kişi daha` : '';
+      sonuc.className = 'import-sonuc err';
+      sonuc.innerHTML = `⚠️ ${tekrarlar.length} öğrenci zaten listede var: ${isimler}${fazla}.<br>Bu öğrenciler tekrar eklensin mi?
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button class="modal-btn" onclick="importKarar('atla')">Sadece yenileri ekle (${yeniler.length})</button>
+          <button class="modal-btn primary" onclick="importKarar('hepsi')">Yine de hepsini ekle</button>
+          <button class="modal-btn" onclick="importKarar('iptal')">İptal</button>
+        </div>`;
+    } catch (err) {
+      sonuc.className = 'import-sonuc err';
+      sonuc.textContent = 'Dosya okunamadı: ' + err.message;
+    }
+  };
+
+  if (isExcel) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file, 'UTF-8');
+}
+
+function importKarar(secim) {
+  if (!_bekleyenImport) return;
+  const { parsed, yeniler, atlanan } = _bekleyenImport;
+  if (secim === 'iptal') {
+    _bekleyenImport = null;
+    const sonuc = document.getElementById('importSonuc');
+    sonuc.className = 'import-sonuc';
+    sonuc.innerHTML = '';
+    return;
+  }
+  const eklenecek = secim === 'hepsi' ? parsed : yeniler;
+  importTamamla(eklenecek, atlanan, secim === 'hepsi');
+  _bekleyenImport = null;
+}
+
+function importTamamla(liste, atlanan, hepsiDahil) {
+  OGRENCILER.push(...liste);
+  aktifSinif = 'hepsi';
+  secilenler.clear();
+  initSinifTabs();
+  renderList();
+  updateBadge();
+  kaydet();
+  const sonuc = document.getElementById('importSonuc');
+  sonuc.className = 'import-sonuc ok';
+  sonuc.innerHTML = `${liste.length} öğrenci eklendi.` + (atlanan ? ` (${atlanan} satır atlandı)` : '') + ` Toplam: ${OGRENCILER.length}`;
+}
+
+function temizleListe() {
+  if (!confirm('Tüm öğrenci listesi silinsin mi?')) return;
+  OGRENCILER = [];
+  aktifSinif = 'hepsi';
+  secilenler.clear();
+  aktifSablon = null;
+  initSinifTabs();
+  renderList();
+  initSablonlar();
+  guncelle();
+  kaydet();
+  const sonuc = document.getElementById('importSonuc');
+  sonuc.className = 'import-sonuc ok';
+  sonuc.textContent = 'Liste temizlendi.';
+}
+
+/* ===================== ÖĞRENCİ SİLME (TEK TEK) ===================== */
+let silmeModu = false;
+
+function toggleSilmeModu() {
+  silmeModu = !silmeModu;
+  const btn = document.getElementById('silBtn');
+  btn.classList.toggle('active', silmeModu);
+  btn.textContent = silmeModu ? '✕ Silme Modundan Çık' : '🗑 Öğrenci Sil';
+  secilenler.clear();
+  renderList();
+}
+
+function ogrenciSil(key) {
+  const o = OGRENCILER.find(x => (x.sinif + '_' + x.ad + '_' + x.soyad) === key);
+  if (!o) return;
+  if (!confirm(`${o.ad} ${o.soyad} (${o.sinif}) listeden silinsin mi?`)) return;
+  OGRENCILER = OGRENCILER.filter(x => (x.sinif + '_' + x.ad + '_' + x.soyad) !== key);
+  secilenler.delete(key);
+  initSinifTabs();
+  renderList();
+  guncelle();
+  kaydet();
+  showToast('Öğrenci silindi');
+}
+
+/* ===================== ŞABLON EKLE / DÜZENLE / SİL ===================== */
+let sablonDuzenleIndex = null; // null => yeni şablon modu
+
+function acSablonEkle() {
+  sablonDuzenleIndex = null;
+  document.getElementById('sablonModalBaslik').textContent = 'Yeni Şablon';
+  document.getElementById('sEmoji').value = '';
+  document.getElementById('sBaslik').value = '';
+  document.getElementById('sMetin').value = '';
+  document.getElementById('sablonSilAlani').style.display = 'none';
+  const sonuc = document.getElementById('sablonSonuc');
+  sonuc.className = 'import-sonuc';
+  sonuc.textContent = '';
+  document.getElementById('sablonModalOverlay').classList.add('show');
+}
+
+function acSablonDuzenle(i) {
+  sablonDuzenleIndex = i;
+  const s = SABLONLAR[i];
+  document.getElementById('sablonModalBaslik').textContent = 'Şablonu Düzenle';
+  document.getElementById('sEmoji').value = s.emoji || '';
+  document.getElementById('sBaslik').value = s.baslik;
+  document.getElementById('sMetin').value = s.metin;
+  document.getElementById('sablonSilAlani').style.display = '';
+  const sonuc = document.getElementById('sablonSonuc');
+  sonuc.className = 'import-sonuc';
+  sonuc.textContent = '';
+  document.getElementById('sablonModalOverlay').classList.add('show');
+}
+
+function kapatSablonModal() {
+  document.getElementById('sablonModalOverlay').classList.remove('show');
+}
+document.getElementById('sablonModalOverlay').addEventListener('click', function(e){
+  if (e.target === this) kapatSablonModal();
+});
+
+function sablonKaydet() {
+  const emoji = document.getElementById('sEmoji').value.trim();
+  const baslik = document.getElementById('sBaslik').value.trim();
+  const metin = document.getElementById('sMetin').value.trim();
+  const sonuc = document.getElementById('sablonSonuc');
+
+  if (!baslik || !metin) {
+    sonuc.className = 'import-sonuc err';
+    sonuc.textContent = 'Başlık ve mail metni zorunludur.';
+    return;
+  }
+
+  const yeniSablon = { emoji, baslik, konu: baslik, metin };
+  if (sablonDuzenleIndex === null) {
+    SABLONLAR.push(yeniSablon);
+  } else {
+    SABLONLAR[sablonDuzenleIndex] = yeniSablon;
+    if (aktifSablon === sablonDuzenleIndex) guncelle();
+  }
+  sablonKaydetLocal();
+  initSablonlar();
+  kapatSablonModal();
+  showToast('Şablon kaydedildi ✓');
+}
+
+function sablonSil() {
+  if (sablonDuzenleIndex === null) return;
+  if (!confirm('Bu şablon silinsin mi?')) return;
+  SABLONLAR.splice(sablonDuzenleIndex, 1);
+  if (aktifSablon === sablonDuzenleIndex) {
+    aktifSablon = null;
+  } else if (typeof aktifSablon === 'number' && aktifSablon > sablonDuzenleIndex) {
+    aktifSablon--;
+  }
+  sablonKaydetLocal();
+  initSablonlar();
+  guncelle();
+  kapatSablonModal();
+  showToast('Şablon silindi');
+}
+
+/* ===================== KALICI SAKLAMA (localStorage) ===================== */
+const STORAGE_KEY = 'veliMailAraciOgrenciler';
+const SABLON_KEY = 'veliMailAraciSablonlar';
+
+function kaydet() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(OGRENCILER)); }
+  catch (e) { /* localStorage kullanılamıyorsa sessizce geç */ }
+}
+
+function yukle() {
+  try {
+    const ham = localStorage.getItem(STORAGE_KEY);
+    if (ham) {
+      const veri = JSON.parse(ham);
+      if (Array.isArray(veri)) OGRENCILER = veri;
+    }
+  } catch (e) { /* bozuk veri varsa yok say */ }
+}
+
+function sablonKaydetLocal() {
+  try { localStorage.setItem(SABLON_KEY, JSON.stringify(SABLONLAR)); }
+  catch (e) { /* localStorage kullanılamıyorsa sessizce geç */ }
+}
+
+function sablonYukleLocal() {
+  try {
+    const ham = localStorage.getItem(SABLON_KEY);
+    if (ham) {
+      const veri = JSON.parse(ham);
+      if (Array.isArray(veri) && veri.length) SABLONLAR = veri;
+    }
+  } catch (e) { /* bozuk veri varsa yok say */ }
+}
+
+/* ===================== INIT ===================== */
+yukle();
+sablonYukleLocal();
+initSinifTabs();
+renderList();
+initSablonlar();
+updateBadge();
+</script>
+</body>
+</html>
